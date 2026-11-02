@@ -2,7 +2,7 @@
 
 **Nom du projet :** HELBIncognito
 **Module / Cours :** Projet Web II
-**Étudiant(s) :** ALINIA Sacha
+**Étudiant :** ALINIA Sacha
 **Date :** 2 novembre 2026
 
 ---
