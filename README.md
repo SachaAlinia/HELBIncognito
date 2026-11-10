@@ -1,63 +1,37 @@
-# Rapport d'Itération 1 - Projet HELBIncognito
+# Rapport d'Itération 2 - Projet HELBIncognito
 
-**Nom du projet :** HELBIncognito
-**Module / Cours :** Projet Web II
 **Étudiant :** ALINIA Sacha
-**Date :** 2 novembre 2026
-
----
+**Date :** 10 novembre 2026
 
 ## 1. Feedback reçu lors de l'itération précédente
+(Ce que l'enseignant t'a dit à la review de l'itération 1. Complète avec tes notes.
+Puis : actions correctives prises pour chaque remarque.)
 
-* **Remarques principales  :**
-  * /
-* **Actions correctives entreprises :**
-  * /
-
----
-
-## 2. État actuel du projet (Fonctionnalités implémentées)
-
-Le projet **HELBIncognito** est développé sous le framework **Django**. L'architecture globale est opérationnelle et s'articule autour des composants suivants :
-
-### 2.1 Architecture & Infrastructure
-
-* **Configuration initiale de Django (`HELBIncognito/`) :** Paramétrage des réglages principaux, gestion des variables globales et routage principal de l'application.
-* **Base de données (`db.sqlite3`) :** Modélisation relationnelle configurée et premières migrations exécutées avec succès.
-
-### 2.2 Applications & Fonctionnalités d'ores et déjà développées
-
-#### A. Gestion des utilisateurs (`users/`)
-
-* [X] **Création de compte / Inscription :** Formulaire de création de compte utilisateur.
-* [X] **Authentification & Connexion :** Système de login/logout sécurisé fourni par Django.
-* [X] **Gestion des profils :** Gestion des informations utilisateur et droits d'accès.
-* [X] **Page Administrateur :** Gestion globale en mode admin.
-
-#### B. Publications (`blog/`)
-
-* [X] **Publication de billets / messages :** Création et affichage des publications.
-* [X] **Lecture des fils d'actualité / posts :** Vue d'ensemble des posts publiés.
-
----
+## 2. État actuel du projet
+- Nouvelle app `game` : modèles Game, GamePlayer, Round, RoundAlias, Message, Vote, Script
+- Contraintes d'intégrité en base : un vote par joueur et par manche, pas d'auto-vote,
+  pseudo unique par manche, pas de doublon de joueur dans une partie
+- Enregistrement des modèles dans l'admin Django
+- Page d'accueil : parties rejoignables triées par nombre de joueurs décroissant
+- Formulaire « Nouvelle partie » (nom, description, manches, durée, cooldown,
+  longueur max, joueurs minimum)
+- Page de détail d'une partie et bouton « Rejoindre »
+- Script `run.sh` fonctionnel sur la VM Ubuntu
+- Diagramme entité-relation (image jointe)
 
 ## 3. Difficultés rencontrées
+- Fusion d'historiques Git (conflits add/add) lors du premier push
+- Remplacement de l'app `blog` du tutoriel par `game` (erreurs NoReverseMatch)
+- Compatibilité avec Python 3.8 / Django 4.2 de la VM
+- (Ajoute les tiennes)
 
-Pendant le développement de cette itération, j'ai fait face à plusieurs défis techniques et organisationnels :
-
-1. **Prise en main des bases de Django :**
-   Il a été difficile au départ d'assimiler les concepts fondamentaux du framework Django (architecture MVT, gestion des requêtes, ORM, etc.) et de comprendre comment connecter proprement les différentes briques du projet.
-2. **Suivi et compréhension des tutoriels (Corey Schafer) :**
-   La formation s'est appuyée sur la série de cours vidéo de Corey Schafer. Il n'était pas toujours évident de saisir l'ensemble des détails techniques de chaque vidéo, ce qui a demandé d'être extrêmement attentif, de faire des pauses fréquentes et de retravailler soigneusement les concepts pour pouvoir les appliquer à mon propre projet.
-
----
-
-## 4. Prochaines tâches à réaliser
-
-Voici la feuille de route pour les prochaines itérations :
-
-| Tâche / Fonctionnalité                   | Description                                                          | Application / Module |
-| :----------------------------------------- | :------------------------------------------------------------------- | :------------------- |
-| **Posts**                            | Permettre d'interagir et réagir anonymement sur chaque publication. | `blog`             |
-| **Amélioration UI/UX**              | Refonte de l'interface graphique et responsive design.               | Templates / CSS      |
-| **Tests unitaires & d'intégration** | Écriture des tests pour les vues et les formulaires clés.          | `tests.py`         |
+## 4. Prochaines tâches
+| Tâche | Estimation |
+|---|---|
+| Démarrage automatique de la partie + création des manches | à compléter |
+| Pseudos aléatoires par manche | à compléter |
+| Chat en temps réel + cooldown | à compléter |
+| Votes et calcul du gagnant | à compléter |
+| Agents IA et section Scripts | à compléter |
+| Profil et graphiques d'activité | à compléter |
+| Parties finies et récapitulatif | à compléter |
