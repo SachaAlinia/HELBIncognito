@@ -1,68 +1,105 @@
 body {
-  background: #fafafa;
-  color: #333333;
+  /* Fond dégradé radial immersif bleu nuit/noir profond */
+  background: radial-gradient(circle at center, #1a1e29 0%, #0d1117 100%);
+  background-attachment: fixed;
+  color: #e2e8f0; /* Texte clair très lisible */
   margin-top: 5rem;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  color: #444444;
+  color: #f0f6fc; /* Titres éclatants */
+  font-weight: 600;
 }
 
 ul {
   margin: 0;
 }
 
+/* Barre de navigation : passage d'un bleu délavé à un bleu ardoise furtif */
 .bg-steel {
-  background-color: #5f788a;
+  background-color: #161b22 !important;
+  border-bottom: 1px solid #30363d;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 .site-header .navbar-nav .nav-link {
-  color: #cbd5db;
+  color: #8b949e;
+  transition: color 0.2s ease-in-out;
 }
 
 .site-header .navbar-nav .nav-link:hover {
-  color: #ffffff;
+  color: #58a6ff; /* Éclat bleu électrique au survol */
 }
 
 .site-header .navbar-nav .nav-link.active {
-  font-weight: 500;
+  font-weight: 600;
+  color: #58a6ff !important;
 }
 
+/* Effet de translucidité (Glassmorphism) pour les blocs de contenu et formulaires */
 .content-section {
-  background: #ffffff;
-  padding: 10px 20px;
-  border: 1px solid #dddddd;
-  border-radius: 3px;
+  background: rgba(22, 27, 34, 0.8) !important;
+  padding: 15px 25px;
+  border: 1px solid #30363d !important;
+  border-radius: 12px; /* Coins plus modernes et arrondis */
   margin-bottom: 20px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
+/* Style des formulaires Crispy Forms pour s'adapter parfaitement au thème sombre */
+.form-control, select, textarea {
+  background-color: #0d1117 !important;
+  border: 1px solid #30363d !important;
+  color: #f0f6fc !important;
+  border-radius: 6px !important;
+}
+
+.form-control:focus {
+  border-color: #58a6ff !important;
+  box-shadow: 0 0 0 0.2rem rgba(88, 166, 255, 0.15) !important;
+}
+
+/* Les titres des articles et publications */
 .article-title {
-  color: #444444;
+  color: #58a6ff; /* Bleu lumineux type tableau de bord */
+  font-weight: 600;
 }
 
 a.article-title:hover {
-  color: #428bca;
+  color: #79c0ff;
   text-decoration: none;
 }
 
 .article-content {
   white-space: pre-line;
+  color: #c9d1d9; /* Gris doux pour le corps du texte */
 }
 
 .article-img {
   height: 65px;
   width: 65px;
   margin-right: 16px;
+  border-radius: 50%;
+  border: 2px solid #30363d;
 }
 
+/* Séparateurs discrets et liens de métadonnées */
 .article-metadata {
-  padding-bottom: 1px;
-  margin-bottom: 4px;
-  border-bottom: 1px solid #e3e3e3
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #30363d;
+  font-size: 0.9rem;
+}
+
+.article-metadata a {
+  color: #a3b3c2;
 }
 
 .article-metadata a:hover {
-  color: #333;
+  color: #58a6ff;
   text-decoration: none;
 }
 
@@ -70,15 +107,29 @@ a.article-title:hover {
   width: 25px;
   height: 25px;
   vertical-align: middle;
+  fill: #58a6ff;
 }
 
+/* Section Profil Utilisateur */
 .account-img {
   height: 125px;
   width: 125px;
   margin-right: 20px;
   margin-bottom: 16px;
+  border-radius: 50%;
+  border: 3px solid #58a6ff;
+  box-shadow: 0 0 15px rgba(88, 166, 255, 0.3);
 }
 
 .account-heading {
   font-size: 2.5rem;
+  color: #f0f6fc;
+}
+
+/* Ajustement des lignes de légende (comme le "New game") */
+legend {
+  color: #58a6ff !important;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #30363d !important;
 }

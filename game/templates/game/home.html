@@ -1,7 +1,7 @@
 {% extends "blog/base.html" %}
 {% block content %}
   <a class="btn btn-primary mb-3" href="{% url 'game-create' %}">New game</a>
-  <h2>Parties rejoignables</h2>
+  <h2>Available Games</h2>
   {% for game in games %}
     <article class="media content-section">
       <div class="media-body">
@@ -13,6 +13,6 @@
       </div>
     </article>
   {% empty %}
-    <p>Pas de parties disponibles pour le moment. Lances en une !</p>
+    <p>No available games for the moment. Create yours !</p>
   {% endfor %}
 {% endblock content %}
