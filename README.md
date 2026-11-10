@@ -4,10 +4,11 @@
 **Date :** 10 novembre 2026
 
 ## 1. Feedback reçu lors de l'itération précédente
-(Ce que l'enseignant t'a dit à la review de l'itération 1. Complète avec tes notes.
-Puis : actions correctives prises pour chaque remarque.)
+
+//
 
 ## 2. État actuel du projet
+
 - Nouvelle app `game` : modèles Game, GamePlayer, Round, RoundAlias, Message, Vote, Script
 - Contraintes d'intégrité en base : un vote par joueur et par manche, pas d'auto-vote,
   pseudo unique par manche, pas de doublon de joueur dans une partie
@@ -20,12 +21,14 @@ Puis : actions correctives prises pour chaque remarque.)
 - Diagramme entité-relation (image jointe)
 
 ## 3. Difficultés rencontrées
+
 - Fusion d'historiques Git (conflits add/add) lors du premier push
 - Remplacement de l'app `blog` du tutoriel par `game` (erreurs NoReverseMatch)
 - Compatibilité avec Python 3.8 / Django 4.2 de la VM
 - (Ajoute les tiennes)
 
 ## 4. Prochaines tâches
+
 | Tâche | Estimation |
 |---|---|
 | Démarrage automatique de la partie + création des manches | à compléter |
