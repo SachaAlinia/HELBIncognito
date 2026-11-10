@@ -1,0 +1,18 @@
+{% extends "blog/base.html" %}
+{% block content %}
+  <a class="btn btn-primary mb-3" href="{% url 'game-create' %}">New game</a>
+  <h2>Parties rejoignables</h2>
+  {% for game in games %}
+    <article class="media content-section">
+      <div class="media-body">
+        <h3><a href="{% url 'game-detail' game.id %}">{{ game.name }}</a></h3>
+        <p>{{ game.short_description }}</p>
+        <small class="text-muted">
+          By {{ game.creator.username }} · {{ game.player_count }} player(s) · {{ game.get_status_display }}
+        </small>
+      </div>
+    </article>
+  {% empty %}
+    <p>Pas de parties disponibles pour le moment. Lances en une !</p>
+  {% endfor %}
+{% endblock content %}

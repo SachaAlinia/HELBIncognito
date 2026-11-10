@@ -1,0 +1,29 @@
+{% extends "blog/base.html" %}
+{% block content %}
+  <div class="content-section">
+    <h2>{{ game.name }}</h2>
+    <p>{{ game.short_description }}</p>
+    <ul>
+      <li>Rounds: {{ game.total_rounds }}</li>
+      <li>Round duration: {{ game.round_duration_seconds }} s</li>
+      <li>Message cooldown: {{ game.message_cooldown_seconds }} s</li>
+      <li>Max message length: {{ game.max_message_length }} characters</li>
+      <li>Minimum players: {{ game.min_players }}</li>
+      <li>Status: {{ game.get_status_display }}</li>
+    </ul>
+
+    <h4>Players ({{ players|length }})</h4>
+    <ul>
+      {% for player in players %}
+        <li>{{ player.user.username }}</li>
+      {% endfor %}
+    </ul>
+
+    {% if not is_player and game.status != 'finished' %}
+      <form method="POST" action="{% url 'game-join' game.id %}">
+        {% csrf_token %}
+        <button class="btn btn-primary" type="submit">Join</button>
+      </form>
+    {% endif %}
+  </div>
+{% endblock content %}
