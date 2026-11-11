@@ -22,10 +22,9 @@
 
 ## 3. Difficultés rencontrées
 
-- Fusion d'historiques Git (conflits add/add) lors du premier push
-- Remplacement de l'app `blog` du tutoriel par `game` (erreurs NoReverseMatch)
-- Compatibilité avec Python 3.8 / Django 4.2 de la VM
-- (Ajoute les tiennes)
+- Conflits Git
+- Remplacement de l'app `blog` du tutoriel par `game`
+- Savoir s'y mettre
 
 ## 4. Prochaines tâches
 
@@ -36,5 +35,4 @@
 | Chat en temps réel + cooldown | à compléter |
 | Votes et calcul du gagnant | à compléter |
 | Agents IA et section Scripts | à compléter |
-| Profil et graphiques d'activité | à compléter |
 | Parties finies et récapitulatif | à compléter |
