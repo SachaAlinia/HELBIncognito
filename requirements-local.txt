@@ -2,4 +2,4 @@
 # The +cpu wheel avoids downloading CUDA libraries on a course VM.
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.14.1+cpu
-transformers>=4.46,<5
+transformers==4.57.6

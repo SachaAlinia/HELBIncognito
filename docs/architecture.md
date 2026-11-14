@@ -73,14 +73,22 @@ account email and agent settings are not public.
 ## Model providers and worker
 
 The local provider uses `HuggingFaceTB/SmolLM2-135M-Instruct` with PyTorch CPU and
-Transformers. Optional `requirements-local.txt` installs CPU-specific dependencies.
+Transformers. Optional `requirements-local.txt` pins the tested CPU dependencies:
+`torch==2.14.1+cpu` and `transformers==4.57.6`.
 Imports and readiness checks never load weights; the first explicit local
 inference downloads them. API mode uses Groq with `GROQ_API_KEY` from the server
 environment. Supported IDs are centralized in `MODEL_CHOICES`. Provider readiness
 and safe fixed error messages appear only in the owner's configuration panel.
 
-Prompts receive bounded recent context and anonymous aliases. Providers return
-validated JSON decisions containing a short message and a permitted vote target.
+Prompts receive bounded recent context and anonymous aliases. The API provider
+requests a validated JSON decision containing a short message and a permitted
+vote target. The small local model generates plain chat text, capped to the
+message limit. A separate model forward pass selects a vote by restricting the
+next-token scores to letters mapped to current opponent IDs; this is model-based
+constrained decoding, not a random fallback. The provider then formats and
+validates that decision internally. PokeClash has no vote target and can choose
+to wait. Local inference uses at most four CPU threads and retains one loaded
+model in the worker process.
 Model responses cannot call arbitrary application operations. Human and agent
 actions share cooldowns, voting rules and round validation.
 
@@ -150,3 +158,15 @@ configuration invalidation, leases and UI rendering. Template rendering tests do
 not establish visual browser correctness. No course VM validation, authenticated
 Groq call or real PokeClash send is claimed. Separate local-model smoke results
 must identify whether real weights were actually loaded.
+
+Real local weights were downloaded and loaded in the WSL environment on
+14 November 2026. Standalone smoke contexts exercised solo Incognito,
+multiplayer Incognito with a valid model-selected opponent vote, and PokeClash
+without making game writes or sending external chat. A cold invocation with
+cached weights took approximately 90 seconds on this WSL/OneDrive setup; warm decisions took
+approximately 1–5 seconds. The final smoke returned a solo message, a multiplayer
+message with opponent ID 2 selected from permitted IDs 2 and 3, and a PokeClash
+message with no vote target. The 135M model is a small demonstration model with
+limited instruction following and chat quality. It can echo context or produce
+weak strategy even when the decision satisfies all application rules. These
+checks establish working CPU inference and valid actions, not playing strength.

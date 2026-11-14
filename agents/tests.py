@@ -1,7 +1,8 @@
 """Agents must use the same rules as human players. Assisted by OpenAI Codex."""
 from datetime import timedelta
 from io import StringIO
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import patch, MagicMock
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase, TransactionTestCase
@@ -153,6 +154,28 @@ class ProviderTests(TestCase):
         for text in ['{"message":"Hi","target_id":8}', '{"message":"Hi","target_id":true}', "plain text"]:
             with self.assertRaises(providers.AgentProviderError):
                 providers._parse(text, self.context)
+
+    @patch("agents.providers._load_local")
+    def test_local_bounds_prose_and_uses_model_scores_for_valid_vote(self, load):
+        tokenizer, model, torch_stub = MagicMock(), MagicMock(), MagicMock()
+        torch_stub.get_num_threads.return_value = 8
+        tokenizer.return_value = {"input_ids": SimpleNamespace(shape=(1, 3))}
+        tokenizer.decode.return_value = "Hello everyone"
+        tokenizer.encode.side_effect = lambda label, **kwargs: [ord(label)]
+        model.generate.return_value = [[0, 1, 2, 3]]
+        model.return_value.logits.__getitem__.return_value.__getitem__.return_value.argmax.return_value.item.return_value = 1
+        load.return_value = tokenizer, model
+        context = {"game": "incognito", "allowed_target_ids": [7, 9],
+                   "max_message_length": 5, "players": []}
+        with patch.dict("sys.modules", {"torch": torch_stub}):
+            result = providers._parse(providers._local("model", "", context), context)
+        self.assertEqual(result, Decision(message="Hello", target_id=9))
+        model.assert_called_once()  # A real model forward pass selects the vote.
+
+    def test_exact_pokeclash_message_and_wait_are_preserved(self):
+        context = {"game": "pokeclash", "allowed_target_ids": [], "max_message_length": 180}
+        self.assertEqual(providers._parse('{"message":" hello ","target_id":null}', context).message, " hello ")
+        self.assertEqual(providers._parse('{"message":"","target_id":null}', context).message, "")
 
 
 class InferenceTransactionTests(TransactionTestCase):
