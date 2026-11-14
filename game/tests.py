@@ -26,13 +26,37 @@ class GameRulesTests(TestCase):
         self.assertEqual(self.game.game_players.count(), 2)
         self.assertEqual(len(set(self.round.aliases.values_list("alias", flat=True))), 2)
 
+    def test_first_message_requires_vote_and_both_are_atomic(self):
+        with self.assertRaises(ValidationError):
+            services.send_message(self.game.pk, self.alice, self.round.pk, "No vote")
+        with self.assertRaises(ValidationError):
+            services.send_message(self.game.pk, self.alice, self.round.pk, "Bad vote", target_id=self.a.pk)
+        self.assertFalse(Message.objects.exists())
+        self.assertFalse(Vote.objects.exists())
+        services.send_message(self.game.pk, self.alice, self.round.pk, "Hello", target_id=self.b.pk)
+        third = services.join_game(self.game.pk, get_user_model().objects.create_user("third-voter"))
+        with self.assertRaises(ValidationError):
+            services.send_message(self.game.pk, self.alice, self.round.pk, "Too soon", target_id=third.pk)
+        self.assertEqual(Vote.objects.get(voter=self.a).target_id, self.b.pk)
+
+    def test_solo_message_needs_vote_when_opponent_arrives(self):
+        solo = Game.objects.create(name="Solo", creator=self.alice, min_players=1, message_cooldown_seconds=0)
+        solo_player = services.join_game(solo.pk, self.alice)
+        round_ = solo.rounds.get()
+        services.send_message(solo.pk, self.alice, round_.pk, "Alone")
+        opponent = services.join_game(solo.pk, self.bob)
+        with self.assertRaises(ValidationError):
+            services.send_message(solo.pk, self.alice, round_.pk, "Need vote")
+        services.send_message(solo.pk, self.alice, round_.pk, "Now vote", target_id=opponent.pk)
+        self.assertEqual(round_.votes.get(voter=solo_player).target_id, opponent.pk)
+
     def test_late_join_gets_alias(self):
         user = get_user_model().objects.create_user("late")
         player = services.join_game(self.game.pk, user)
         self.assertTrue(self.round.aliases.filter(player=player).exists())
 
     def test_cooldown_and_length(self):
-        services.send_message(self.game.pk, self.alice, self.round.pk, "Hello")
+        services.send_message(self.game.pk, self.alice, self.round.pk, "Hello", target_id=self.b.pk)
         for user, content in [(self.alice, "Again"), (self.bob, "a"*181), (self.bob, " ")]:
             with self.assertRaises(ValidationError):
                 services.send_message(self.game.pk, user, self.round.pk, content)
@@ -40,7 +64,7 @@ class GameRulesTests(TestCase):
     def test_vote_rules_and_update(self):
         with self.assertRaises(ValidationError):
             services.cast_vote(self.game.pk, self.alice, self.round.pk, self.b.pk)
-        services.send_message(self.game.pk, self.alice, self.round.pk, "Hello")
+        services.send_message(self.game.pk, self.alice, self.round.pk, "Hello", target_id=self.b.pk)
         with self.assertRaises(ValidationError):
             services.cast_vote(self.game.pk, self.alice, self.round.pk, self.a.pk)
         player = services.join_game(self.game.pk, get_user_model().objects.create_user("third"))
@@ -50,7 +74,7 @@ class GameRulesTests(TestCase):
         self.assertEqual(self.round.votes.get().target_id, player.pk)
 
     def test_winner_awarded_once(self):
-        services.send_message(self.game.pk, self.alice, self.round.pk, "Hello")
+        services.send_message(self.game.pk, self.alice, self.round.pk, "Hello", target_id=self.b.pk)
         services.cast_vote(self.game.pk, self.alice, self.round.pk, self.b.pk)
         self.close()
         self.close()
@@ -59,7 +83,7 @@ class GameRulesTests(TestCase):
 
     def test_tie(self):
         for user, target in [(self.alice, self.b), (self.bob, self.a)]:
-            services.send_message(self.game.pk, user, self.round.pk, "Hello")
+            services.send_message(self.game.pk, user, self.round.pk, "Hello", target_id=target.pk)
             services.cast_vote(self.game.pk, user, self.round.pk, target.pk)
         self.close()
         self.round.refresh_from_db()
@@ -81,7 +105,7 @@ class GameRulesTests(TestCase):
     def test_foreign_target(self):
         other = Game.objects.create(name="Other", creator=self.alice)
         outsider = GamePlayer.objects.create(game=other, user=self.bob)
-        services.send_message(self.game.pk, self.alice, self.round.pk, "Hello")
+        services.send_message(self.game.pk, self.alice, self.round.pk, "Hello", target_id=self.b.pk)
         with self.assertRaises(ValidationError):
             services.cast_vote(self.game.pk, self.alice, self.round.pk, outsider.pk)
 
@@ -96,7 +120,7 @@ class GameRulesTests(TestCase):
 
     def test_pages_and_private_feed(self):
         self.client.force_login(self.alice)
-        services.send_message(self.game.pk, self.alice, self.round.pk, "Hello")
+        services.send_message(self.game.pk, self.alice, self.round.pk, "Hello", target_id=self.b.pk)
         self.assertEqual(self.client.get(reverse("game-detail", args=[self.game.pk])).status_code, 200)
         response = self.client.get(reverse("game-state", args=[self.game.pk]))
         self.assertEqual(response.status_code, 200)

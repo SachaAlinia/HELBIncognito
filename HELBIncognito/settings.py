@@ -31,6 +31,7 @@ ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,[::1
 
 INSTALLED_APPS = [
     'game.apps.GameConfig',
+    'agents',
     'helbplays',
     'users.apps.UsersConfig',
     'crispy_forms',
@@ -141,3 +142,8 @@ HELBPLAYS_SEND_URL = 'https://helbplays2627.alwaysdata.net/chat.php'
 HELBPLAYS_UID = os.environ.get('HELBPLAYS_UID', '')
 HELBPLAYS_KEY = os.environ.get('HELBPLAYS_KEY', '')
 HELBPLAYS_COOLDOWN_SECONDS = 10
+
+# Credentials stay in the worker process, never in forms, prompts or the DB.
+GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
+AGENTS_INTERVAL_SECONDS = 10
+AGENTS_LEASE_SECONDS = 300

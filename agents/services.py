@@ -18,8 +18,11 @@ def play_incognito(player, round_id, decision):
     if not player.ai_enabled:
         return
     if decision.message:
-        game_services.send_message(player.game_id, player.user, round_id, decision.message)
-    if decision.target_id is not None:
+        return game_services.send_message(
+            player.game_id, player.user, round_id, decision.message,
+            target_id=decision.target_id,
+        )
+    elif decision.target_id is not None:
         game_services.cast_vote(player.game_id, player.user, round_id, decision.target_id)
 
 

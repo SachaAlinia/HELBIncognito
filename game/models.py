@@ -69,6 +69,14 @@ class GamePlayer(models.Model):
         max_length=10, choices=AgentType.choices, default=AgentType.LOCAL
     )
     ai_model_name = models.CharField(max_length=50, blank=True)
+    # Worker state contains no credentials or provider response bodies.
+    ai_last_error = models.CharField(max_length=200, blank=True)
+    ai_config_revision = models.PositiveIntegerField(default=0)
+    ai_last_run_at = models.DateTimeField(null=True, blank=True)
+    ai_next_run_at = models.DateTimeField(null=True, blank=True)
+    ai_failure_count = models.PositiveSmallIntegerField(default=0)
+    ai_lease_token = models.CharField(max_length=32, blank=True)
+    ai_lease_until = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         constraints = [

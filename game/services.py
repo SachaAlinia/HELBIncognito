@@ -103,7 +103,7 @@ def _active_player(game, user, now, round_id):
 
 
 @transaction.atomic
-def send_message(game_id, user, round_id, content):
+def send_message(game_id, user, round_id, content, target_id=None):
     game = _lock_game(game_id)
     now = timezone.now()
     round_, player = _active_player(game, user, now, round_id)
@@ -112,6 +112,15 @@ def send_message(game_id, user, round_id, content):
     last = Message.objects.filter(author=player).order_by("-sent_at").first()
     if last and now < last.sent_at + timedelta(seconds=game.message_cooldown_seconds):
         raise ValidationError("Please wait before sending another message.")
+    # The first message and its vote are one action: no active voter can omit
+    # their vote when opponents exist. A solo round cannot have a valid target.
+    opponents = round_.aliases.exclude(player=player)
+    if target_id is not None:
+        if not opponents.filter(player_id=target_id).exists():
+            raise ValidationError("Choose another player in this round.")
+        Vote.objects.update_or_create(round=round_, voter=player, defaults={"target_id": target_id})
+    elif opponents.exists() and not round_.votes.filter(voter=player).exists():
+        raise ValidationError("Choose a player to vote for with your first message.")
     return Message.objects.create(round=round_, author=player, content=content)
 
 
