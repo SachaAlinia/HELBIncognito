@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -19,20 +20,18 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'exhlfdat&vfum(-34*c2uroi(($ww(yo$9pv98=e6p^gl(-eoj'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
+# Assisted by OpenAI Codex: environment-based local configuration.
+DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "development-only-change-before-deployment")
+if not DEBUG and SECRET_KEY == "development-only-change-before-deployment":
+    raise ImproperlyConfigured("Set DJANGO_SECRET_KEY when DEBUG is disabled.")
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,[::1]").split(",")
 
 # Application definition
 
 INSTALLED_APPS = [
     'game.apps.GameConfig',
-    'blog.apps.BlogConfig',
+    'helbplays',
     'users.apps.UsersConfig',
     'crispy_forms',
     'crispy_bootstrap4',
@@ -59,7 +58,7 @@ ROOT_URLCONF = 'HELBIncognito.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -81,7 +80,8 @@ WSGI_APPLICATION = 'HELBIncognito.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'NAME': os.environ.get('DJANGO_DB_PATH', os.path.join(BASE_DIR, 'db.sqlite3')),
+        'OPTIONS': {'timeout': 20},
     }
 }
 
@@ -123,6 +123,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = '/static/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
@@ -132,3 +133,11 @@ CRISPY_TEMPLATE_PACK = "bootstrap4"
 
 LOGIN_REDIRECT_URL = 'game-home'
 LOGIN_URL = 'login'
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+# The course handout uses 2526 for reading and 2627 for writing: keep configurable.
+HELBPLAYS_CHAT_URL = os.environ.get('HELBPLAYS_CHAT_URL', 'https://helbplays2526.alwaysdata.net/chat.txt')
+HELBPLAYS_SEND_URL = 'https://helbplays2627.alwaysdata.net/chat.php'
+HELBPLAYS_UID = os.environ.get('HELBPLAYS_UID', '')
+HELBPLAYS_KEY = os.environ.get('HELBPLAYS_KEY', '')
+HELBPLAYS_COOLDOWN_SECONDS = 10

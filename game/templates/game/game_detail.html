@@ -1,4 +1,4 @@
-{% extends "blog/base.html" %}
+{% extends "base.html" %}
 {% block content %}
   <div class="content-section">
     <h2>{{ game.name }}</h2>
@@ -12,10 +12,15 @@
       <li>Status: {{ game.get_status_display }}</li>
     </ul>
 
+    {% if game.status == 'finished' %}
+      {% if winner %}<p>Game winner: {{ winner.user.username }}</p>
+      {% else %}<p>No game winner: tied final scores.</p>{% endif %}
+    {% endif %}
+
     <h4>Players ({{ players|length }})</h4>
     <ul>
       {% for player in players %}
-        <li>{{ player.user.username }}</li>
+        <li>{{ player.user.username }}: {{ player.total_score }} point(s)</li>
       {% endfor %}
     </ul>
 
@@ -26,4 +31,69 @@
       </form>
     {% endif %}
   </div>
+
+  {% if round %}
+  <section class="content-section">
+    <h3>Round {{ round.number }}</h3>
+    <p>Started at {{ round.started_at }}. Duration: {{ game.round_duration_seconds }} seconds.</p>
+    <p id="chat-status" role="status"></p>
+    <div id="game-chat" aria-live="polite">
+      {% for message in chat %}<p><strong>{{ message.alias }}</strong>: {{ message.content }}</p>{% endfor %}
+    </div>
+    {% if is_player %}
+    <form method="post" action="{% url 'game-action' game.id %}">
+      {% csrf_token %}<input type="hidden" name="round_id" value="{{ round.id }}">
+      <label for="content">Message</label>
+      <textarea id="content" name="content" maxlength="{{ game.max_message_length }}" required class="form-control"></textarea>
+      <button type="submit" name="action" value="message" class="btn btn-primary">Send</button>
+    </form>
+    <form method="post" action="{% url 'game-action' game.id %}">
+      {% csrf_token %}<input type="hidden" name="round_id" value="{{ round.id }}">
+      <fieldset><legend>Vote after sending a message</legend>
+      {% for alias in aliases %}
+        <label><input type="radio" name="target" value="{{ alias.player_id }}" required> {{ alias.alias }}</label>
+      {% empty %}<p>No other player yet.</p>{% endfor %}
+      </fieldset>
+      <button type="submit" name="action" value="vote" class="btn btn-primary">Save vote</button>
+    </form>
+    {% endif %}
+  </section>
+  {% endif %}
+  {% for past_round in history %}
+  <section class="content-section">
+    <h3>Round {{ past_round.number }} result</h3>
+    {% if past_round.winner %}<p>{{ past_round.winner.user.username }}: +1 point</p>
+    {% else %}<p>No winner. No points awarded.</p>{% endif %}
+    {% for message in past_round.messages.all %}
+      {% for alias in past_round.aliases.all %}
+        {% if message.author_id == alias.player_id %}<p><strong>{{ alias.alias }}</strong>: {{ message.content }}</p>{% endif %}
+      {% endfor %}
+    {% endfor %}
+  </section>
+  {% endfor %}
+  <script>
+  async function refreshGame() {
+    try {
+      const response = await fetch('{% url "game-state" game.id %}', {cache: 'no-store'});
+      if (!response.ok) throw new Error('Game unavailable');
+      const data = await response.json();
+      if (data.round_id !== {% if round %}{{ round.id }}{% else %}null{% endif %} || data.status !== '{{ game.status }}' || data.player_count !== {{ players|length }}) {
+        window.location.reload(); return;
+      }
+      const chat = document.getElementById('game-chat');
+      if (chat) {
+        chat.replaceChildren(...data.messages.map(message => {
+          const row = document.createElement('p');
+          row.textContent = message.alias + ': ' + message.content;
+          return row;
+        }));
+      }
+    } catch (error) {
+      const status = document.getElementById('chat-status');
+      if (status) status.textContent = error.message;
+    }
+    setTimeout(refreshGame, 2000);
+  }
+  refreshGame();
+  </script>
 {% endblock content %}

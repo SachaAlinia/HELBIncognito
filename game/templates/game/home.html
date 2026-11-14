@@ -1,4 +1,4 @@
-{% extends "blog/base.html" %}
+{% extends "base.html" %}
 {% block content %}
   <a class="btn btn-primary mb-3" href="{% url 'game-create' %}">New game</a>
   <h2>Available Games</h2>
@@ -8,11 +8,15 @@
         <h3><a href="{% url 'game-detail' game.id %}">{{ game.name }}</a></h3>
         <p>{{ game.short_description }}</p>
         <small class="text-muted">
-          By {{ game.creator.username }} · {{ game.player_count }} player(s) · {{ game.get_status_display }}
+          By {{ game.creator.username }} Ã‚Â· {{ game.player_count }} player(s) Ã‚Â· {{ game.get_status_display }}
         </small>
       </div>
     </article>
   {% empty %}
     <p>No available games for the moment. Create yours !</p>
   {% endfor %}
+<h2>Finished games</h2>
+  {% for game in finished_games %}
+    <p><a href="{% url 'game-detail' game.id %}">{{ game.name }}</a> — {{ game.finished_at }}</p>
+  {% empty %}<p>No finished games yet.</p>{% endfor %}
 {% endblock content %}

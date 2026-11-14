@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>PokeClash</h1>
+<p id="chat-status" role="status">Loading external chat…</p>
+<pre id="external-chat" style="white-space:pre-wrap"></pre>
+{% if user.is_staff %}
+<form method="post" action="{% url 'helbplays-send' %}">
+  {% csrf_token %}
+  <label for="message">Message for your configured personal account</label>
+  <textarea id="message" name="content" class="form-control" required></textarea>
+  <button type="submit" class="btn btn-primary">Send</button>
+</form>
+{% else %}<p>Sending is reserved for the owner of the configured external account.</p>{% endif %}
+<script>
+async function refreshChat() {
+  const status = document.getElementById('chat-status');
+  try {
+    const response = await fetch('{% url "helbplays-feed" %}', {cache: 'no-store'});
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Chat unavailable');
+    document.getElementById('external-chat').textContent = data.content;
+    status.textContent = 'Chat updated';
+  } catch (error) { status.textContent = error.message; }
+  setTimeout(refreshChat, 5000);
+}
+refreshChat();
+</script>
+{% endblock %}
