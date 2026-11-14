@@ -1,18 +1,51 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>PokeClash</h1>
+<p>Join the same message group as other players. The uniquely largest group wins a round.</p>
 <p id="chat-status" role="status">Loading external chat…</p>
-<pre id="external-chat" class="external-chat" tabindex="0" aria-label="External chat messages"></pre>
-{% if user.is_staff %}
+<div id="external-chat" class="external-chat" tabindex="0" aria-label="Recent external chat messages"></div>
+<p class="small">Recent observations only. The external feed may be incomplete, so current round timing and scores are unknown.</p>
+<details class="mb-3"><summary>Game rules</summary>
+  <p>A round lasts 300 seconds from its first message. Your last message in that round determines your group.
+  The uniquely largest group wins: each winner gets floor(losers ÷ winners) points. A tie for largest group gives no points.
+  A group of at least 25 players saying <code>reset</code> at round end resets all scores. Automatic reset messages are blocked.</p>
+</details>
+{% if can_control %}
+{% if not account_ready %}
+<div class="alert alert-warning" role="status">Account setup required: set <code>HELBPLAYS_UID</code> and <code>HELBPLAYS_KEY</code> on the server, then restart it. Keep the key out of prompts and scripts.</div>
+{% endif %}
+<section class="content-section">
+<h2>Manual message</h2>
 <form method="post" action="{% url 'helbplays-send' %}">
   {% csrf_token %}
   <label for="message">Message for your configured personal account</label>
-  <textarea id="message" name="content" class="form-control" required></textarea>
-  <button type="submit" class="btn btn-primary">Send</button>
+  <textarea id="message" name="content" class="form-control" maxlength="2000" required></textarea>
+  <p class="small">Manual and agent sends share a ten second cooldown. A request can time out after delivery; check the chat before trying again.</p>
+  <button type="submit" class="btn btn-primary" {% if not account_ready %}disabled{% endif %}>Send</button>
 </form>
-{% else %}<p>Sending is reserved for the owner of the configured external account.</p>{% endif %}
+</section>
+<section class="content-section">
+  <h2>Your PokeClash agent</h2>
+  <p>Save a strategy and optionally select one of <a href="{% url 'script-list' %}">your reusable scripts</a>. Choose a model matching the provider. API decisions send this prompt and recent chat to Groq.</p>
+  {% if provider_issue %}<p class="alert alert-info">{{ provider_issue }}</p>{% endif %}
+  <p><strong>Status:</strong> {% if agent.enabled %}Automatic decisions enabled{% else %}Automatic decisions disabled{% endif %}.
+  {{ agent.last_result|default:"Save settings to prepare your agent." }}</p>
+  {% if agent.last_run_at %}<p class="small">Last decision attempt: {{ agent.last_run_at }}. Next eligible attempt: {{ agent.next_run_at }}.</p>{% endif %}
+  <form method="post" action="{% url 'helbplays-agent' %}">
+    {% csrf_token %}
+    {{ agent_form.as_p }}
+    <button type="submit" class="btn btn-primary">Save agent settings</button>
+  </form>
+  <form method="post" action="{% url 'helbplays-agent-run' %}" class="mt-3">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-outline-primary" {% if not account_ready or not agent %}disabled{% endif %}>Queue one agent decision</button>
+  </form>
+  <p class="small mt-2">Queued and automatic decisions can send real messages. Both require the server worker: <code>python manage.py run_agents</code>. Saving settings or refreshing chat never runs inference.</p>
+</section>
+{% else %}<p>Sending and agent controls are reserved for the configured account owner. Set <code>HELBPLAYS_OWNER_USERNAME</code> on the server to grant your login access; otherwise staff access is required.</p>{% endif %}
 <script>
 let chatLoaded = false;
+let chatFingerprint = '';
 async function refreshChat() {
   const status = document.getElementById('chat-status');
   try {
@@ -22,12 +55,32 @@ async function refreshChat() {
     const chat = document.getElementById('external-chat');
     const followLatest = !chatLoaded || chat.scrollHeight - chat.scrollTop - chat.clientHeight < 40;
     const previousScroll = chat.scrollTop;
-    if (chat.textContent !== data.content) {
-      chat.textContent = data.content;
+    const fingerprint = JSON.stringify(data.messages);
+    if (fingerprint !== chatFingerprint) {
+      const rows = data.messages.map(message => {
+        const row = document.createElement('div');
+        row.className = 'mb-2';
+        const author = document.createElement('strong');
+        author.textContent = message.uid;
+        const timestamp = document.createElement('small');
+        timestamp.className = 'ml-2 text-muted';
+        timestamp.textContent = message.timestamp;
+        const body = document.createElement('div');
+        body.textContent = message.message;
+        row.append(author, timestamp, body);
+        return row;
+      });
+      if (!rows.length) {
+        const empty = document.createElement('p');
+        empty.textContent = 'No valid recent messages in the feed.';
+        rows.push(empty);
+      }
+      chat.replaceChildren(...rows);
+      chatFingerprint = fingerprint;
       chat.scrollTop = followLatest ? chat.scrollHeight : previousScroll;
     }
     chatLoaded = true;
-    status.textContent = 'Chat updated';
+    status.textContent = 'Chat updated' + (data.ignored_lines ? ' · ' + data.ignored_lines + ' unrecognized lines omitted' : '');
   } catch (error) { status.textContent = error.message; }
   setTimeout(refreshChat, 5000);
 }
