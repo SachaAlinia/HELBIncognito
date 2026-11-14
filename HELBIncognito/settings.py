@@ -135,8 +135,8 @@ LOGIN_REDIRECT_URL = 'game-home'
 LOGIN_URL = 'login'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
-# The course handout uses 2526 for reading and 2627 for writing: keep configurable.
-HELBPLAYS_CHAT_URL = os.environ.get('HELBPLAYS_CHAT_URL', 'https://helbplays2526.alwaysdata.net/chat.txt')
+# Use the current service for reading and writing; allow a custom reading URL.
+HELBPLAYS_CHAT_URL = os.environ.get('HELBPLAYS_CHAT_URL', 'https://helbplays2627.alwaysdata.net/chat.txt')
 HELBPLAYS_SEND_URL = 'https://helbplays2627.alwaysdata.net/chat.php'
 HELBPLAYS_UID = os.environ.get('HELBPLAYS_UID', '')
 HELBPLAYS_KEY = os.environ.get('HELBPLAYS_KEY', '')

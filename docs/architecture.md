@@ -60,11 +60,12 @@ For deployment with several staff users, they must all be trusted operators of
 that account. Per-user external credentials would require a separate private
 credential design. Reading is available to authenticated users.
 
-`HELBPLAYS_CHAT_URL` defaults to the handout's 2526 chat.txt domain, using HTTPS;
-the send endpoint uses 2627. Confirm the reading URL with the teacher and override
-it if necessary. The live response format and service availability have not been
-verified. HTTP success is treated as a completed request, not proof that the game
-accepted the message. Check the refreshed chat for confirmation.
+`HELBPLAYS_CHAT_URL` defaults to `https://helbplays2627.alwaysdata.net/chat.txt`;
+the send endpoint uses the same 2627 domain. The previous 2526 domain no longer
+resolves. The current reading URL returned HTTP 200 with plain text when checked
+on 14 November 2026. Override `HELBPLAYS_CHAT_URL` if the service moves again.
+HTTP success is treated as a completed request, not proof that the game accepted
+the message. Check the refreshed chat for confirmation.
 
 A sending attempt reserves the ten-second cooldown before making a network call.
 Timeouts are not automatically retried because the server might have accepted the

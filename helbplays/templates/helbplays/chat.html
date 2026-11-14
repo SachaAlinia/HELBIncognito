@@ -2,7 +2,7 @@
 {% block content %}
 <h1>PokeClash</h1>
 <p id="chat-status" role="status">Loading external chat…</p>
-<pre id="external-chat" style="white-space:pre-wrap"></pre>
+<pre id="external-chat" class="external-chat" tabindex="0" aria-label="External chat messages"></pre>
 {% if user.is_staff %}
 <form method="post" action="{% url 'helbplays-send' %}">
   {% csrf_token %}
@@ -12,13 +12,21 @@
 </form>
 {% else %}<p>Sending is reserved for the owner of the configured external account.</p>{% endif %}
 <script>
+let chatLoaded = false;
 async function refreshChat() {
   const status = document.getElementById('chat-status');
   try {
     const response = await fetch('{% url "helbplays-feed" %}', {cache: 'no-store'});
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Chat unavailable');
-    document.getElementById('external-chat').textContent = data.content;
+    const chat = document.getElementById('external-chat');
+    const followLatest = !chatLoaded || chat.scrollHeight - chat.scrollTop - chat.clientHeight < 40;
+    const previousScroll = chat.scrollTop;
+    if (chat.textContent !== data.content) {
+      chat.textContent = data.content;
+      chat.scrollTop = followLatest ? chat.scrollHeight : previousScroll;
+    }
+    chatLoaded = true;
     status.textContent = 'Chat updated';
   } catch (error) { status.textContent = error.message; }
   setTimeout(refreshChat, 5000);
