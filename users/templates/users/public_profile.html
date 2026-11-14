@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+{# Assisted by OpenAI Codex: dependency-free daily chart with accessible data. #}
+<section class="content-section">
+  <h2>{{ player_user.username }}</h2>
+  {% if player_user.profile.image %}<img class="rounded-circle account-img" src="{{ player_user.profile.image.url }}" alt="{{ player_user.username }}'s avatar">{% endif %}
+  <p>{{ games_played }} game(s) played · {{ games_won }} game(s) won</p>
+  <h3>Daily games played and won</h3>
+  <p class="text-muted">Played counts each joined game on the joining date. Won counts finished games on the finishing date, only when one player has the highest final score. Ties have no winner. Dates use the server timezone.</p>
+  {% if daily_stats %}
+  <p><span class="chart-key chart-played"></span> Played <span class="chart-key chart-won"></span> Won</p>
+  <div class="daily-chart" role="img" aria-label="Daily games played and won. Exact counts are in the table below.">
+    {% for day in daily_stats %}
+    <div class="chart-day" title="{{ day.date|date:'Y-m-d' }}: {{ day.played }} played, {{ day.won }} won">
+      <div class="chart-bars"><span class="chart-played" style="height: {{ day.played_height|floatformat:0 }}px"></span><span class="chart-won" style="height: {{ day.won_height|floatformat:0 }}px"></span></div>
+      <small>{{ day.date|date:'m-d' }}</small>
+    </div>
+    {% endfor %}
+  </div>
+  <details><summary>Daily counts</summary>
+    <table class="table table-sm"><caption>Daily games for {{ player_user.username }}</caption>
+      <thead><tr><th scope="col">Date</th><th scope="col">Played</th><th scope="col">Won</th></tr></thead>
+      <tbody>{% for day in daily_stats %}<tr><th scope="row">{{ day.date|date:'Y-m-d' }}</th><td>{{ day.played }}</td><td>{{ day.won }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </details>
+  {% else %}<p>No games played yet.</p>{% endif %}
+</section>
+{% endblock content %}

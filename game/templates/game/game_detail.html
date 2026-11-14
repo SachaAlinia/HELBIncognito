@@ -1,8 +1,9 @@
 {% extends "base.html" %}
+{% load crispy_forms_tags %}
 {% block content %}
+  {# Assisted by OpenAI Codex: live controls, private agent settings and results. #}
   <div class="content-section">
-    <h2>{{ game.name }}</h2>
-    <p>{{ game.short_description }}</p>
+    <h2>{{ game.name }}</h2><p>{{ game.short_description }}</p>
     <ul>
       <li>Rounds: {{ game.total_rounds }}</li>
       <li>Round duration: {{ game.round_duration_seconds }} s</li>
@@ -11,67 +12,107 @@
       <li>Minimum players: {{ game.min_players }}</li>
       <li>Status: {{ game.get_status_display }}</li>
     </ul>
-
     {% if game.status == 'finished' %}
-      {% if winner %}<p>Game winner: {{ winner.user.username }}</p>
+      {% if winner %}<p>Game winner: <a href="{% url 'public-profile' winner.user_id %}">{{ winner.user.username }}</a></p>
       {% else %}<p>No game winner: tied final scores.</p>{% endif %}
     {% endif %}
-
-    <h4>Players ({{ players|length }})</h4>
-    <ul>
-      {% for player in players %}
-        <li>{{ player.user.username }}: {{ player.total_score }} point(s)</li>
-      {% endfor %}
-    </ul>
-
+    <h3>Ranking ({{ players|length }} players)</h3>
+    <ol>{% for player in players %}
+      <li><a href="{% url 'public-profile' player.user_id %}">{{ player.user.username }}</a>: {{ player.total_score }} point(s)</li>
+    {% endfor %}</ol>
     {% if not is_player and game.status != 'finished' %}
-      <form method="POST" action="{% url 'game-join' game.id %}">
-        {% csrf_token %}
-        <button class="btn btn-primary" type="submit">Join</button>
-      </form>
+      <form method="post" action="{% url 'game-join' game.id %}">{% csrf_token %}<button class="btn btn-primary" type="submit">Join</button></form>
     {% endif %}
   </div>
-
   {% if round %}
   <section class="content-section">
     <h3>Round {{ round.number }}</h3>
-    <p>Started at {{ round.started_at }}. Duration: {{ game.round_duration_seconds }} seconds.</p>
+    <p>Time remaining: <strong id="round-countdown" role="timer" data-deadline="{{ round_deadline|date:'c' }}">Calculating…</strong></p>
+    {% if own_alias %}<p>Your alias: <strong>{{ own_alias.alias }}</strong></p>{% endif %}
+    {% if is_player %}<p>Current vote: <strong id="current-vote">{{ vote_alias|default:"No vote yet" }}</strong></p>{% endif %}
     <p id="chat-status" role="status"></p>
-    <div id="game-chat" aria-live="polite">
-      {% for message in chat %}<p><strong>{{ message.alias }}</strong>: {{ message.content }}</p>{% endfor %}
-    </div>
+    <div id="game-chat" aria-live="polite">{% for message in chat %}<p><strong>{{ message.alias }}</strong>: {{ message.content }}</p>{% endfor %}</div>
     {% if is_player %}
     <form method="post" action="{% url 'game-action' game.id %}">
       {% csrf_token %}<input type="hidden" name="round_id" value="{{ round.id }}">
       <label for="content">Message</label>
       <textarea id="content" name="content" maxlength="{{ game.max_message_length }}" required class="form-control"></textarea>
-      <button type="submit" name="action" value="message" class="btn btn-primary">Send</button>
-    </form>
-    <form method="post" action="{% url 'game-action' game.id %}">
-      {% csrf_token %}<input type="hidden" name="round_id" value="{{ round.id }}">
-      <fieldset><legend>Vote after sending a message</legend>
-      {% for alias in aliases %}
-        <label><input type="radio" name="target" value="{{ alias.player_id }}" required> {{ alias.alias }}</label>
-      {% empty %}<p>No other player yet.</p>{% endfor %}
+      {% if aliases %}
+      <fieldset id="message-targets"><legend>Vote with this message</legend>
+        <p id="message-vote-help">{% if own_vote %}Your current vote is selected. You can change it.{% else %}Choose another player to send your first message.{% endif %}</p>
+        {% for alias in aliases %}<label class="d-block"><input type="radio" name="target" value="{{ alias.player_id }}" {% if own_vote.target_id == alias.player_id %}checked{% endif %} {% if not own_vote %}required{% endif %}> {{ alias.alias }}</label>{% endfor %}
       </fieldset>
-      <button type="submit" name="action" value="vote" class="btn btn-primary">Save vote</button>
+      {% else %}<p>You can chat alone. A vote will be required once another player joins.</p>{% endif %}
+      <button type="submit" name="action" value="message" class="btn btn-primary mt-2">Send message</button>
     </form>
-    {% endif %}
+    {% if aliases %}
+    <form method="post" action="{% url 'game-action' game.id %}" class="mt-3">
+      {% csrf_token %}<input type="hidden" name="round_id" value="{{ round.id }}">
+      <fieldset><legend>Change vote after sending a message</legend>
+        {% for alias in aliases %}<label class="d-block"><input type="radio" name="target" value="{{ alias.player_id }}" {% if own_vote.target_id == alias.player_id %}checked{% endif %} required> {{ alias.alias }}</label>{% endfor %}
+      </fieldset>
+      <button type="submit" name="action" value="vote" class="btn btn-outline-primary mt-2">Save vote</button>
+    </form>
+    {% endif %}{% endif %}
   </section>
   {% endif %}
-  {% for past_round in history %}
+  {% if is_player %}
   <section class="content-section">
-    <h3>Round {{ past_round.number }} result</h3>
-    {% if past_round.winner %}<p>{{ past_round.winner.user.username }}: +1 point</p>
+    <h3>Your Incognito agent</h3>
+    <p>Status: <strong id="agent-enabled">{% if own_player.ai_enabled %}enabled{% else %}stopped{% endif %}</strong>. Run the agent worker to process enabled agents.</p>
+    <p id="agent-error" class="text-danger" role="status">{{ own_player.ai_last_error }}</p>
+    <p>Last attempt: <span id="agent-last-run">{{ own_player.ai_last_run_at|default:"No attempt yet" }}</span></p>
+    <ul>{% for provider, readiness in agent_form.provider_readiness.items %}<li>{{ provider|title }}: {{ readiness|default:"Ready" }}</li>{% endfor %}</ul>
+    {% if game.status != 'finished' %}
+    <form method="post" action="{% url 'game-agent' game.id %}">
+      {% csrf_token %}{{ agent_form|crispy }}
+      <button class="btn btn-primary" type="submit">Save agent settings</button>
+      <a href="{% url 'script-list' %}">Manage scripts</a>
+    </form>
+    {% endif %}
+    {% if own_player.ai_enabled %}
+    <form method="post" action="{% url 'game-agent' game.id %}" class="mt-2">
+      {% csrf_token %}<button type="submit" name="action" value="stop" class="btn btn-outline-danger">Stop agent</button>
+    </form>
+    {% endif %}
+    {{ agent_form.model_choices|json_script:"incognito-model-choices" }}
+  </section>
+  {% endif %}
+  {% for result in history %}
+  <section class="content-section">
+    <h3>Round {{ result.round.number }} result</h3>
+    {% if result.round.winner %}<p>Winner: <a href="{% url 'public-profile' result.round.winner.user_id %}">{{ result.round.winner.user.username }}</a></p>
     {% else %}<p>No winner. No points awarded.</p>{% endif %}
-    {% for message in past_round.messages.all %}
-      {% for alias in past_round.aliases.all %}
-        {% if message.author_id == alias.player_id %}<p><strong>{{ alias.alias }}</strong>: {{ message.content }}</p>{% endif %}
-      {% endfor %}
-    {% endfor %}
+    <table class="table table-sm"><caption>Points awarded in round {{ result.round.number }}</caption>
+      <thead><tr><th scope="col">Player</th><th scope="col">Points</th></tr></thead>
+      <tbody>{% for score in result.scores %}<tr>
+        <th scope="row"><a href="{% url 'public-profile' score.player.user_id %}">{{ score.player.user.username }}</a></th>
+        <td>{% if score.participated %}{{ score.points }}{% else %}Did not participate{% endif %}</td>
+      </tr>{% endfor %}</tbody>
+    </table>
+    <details><summary>Round chat</summary>{% for message in result.chat %}<p><strong>{{ message.alias }}</strong>: {{ message.content }}</p>{% empty %}<p>No messages.</p>{% endfor %}</details>
   </section>
   {% endfor %}
   <script>
+  // Assisted by OpenAI Codex: safe DOM rendering and dynamic model options.
+  const provider = document.getElementById('id_ai_agent_type');
+  const model = document.getElementById('id_ai_model_name');
+  const choices = document.getElementById('incognito-model-choices');
+  if (provider && model && choices) {
+    const catalogue = JSON.parse(choices.textContent);
+    provider.addEventListener('change', () => {
+      model.replaceChildren(new Option('Select a model', ''));
+      for (const [value, label] of (catalogue[provider.value] || [])) model.add(new Option(label, value));
+    });
+  }
+  const timer = document.getElementById('round-countdown');
+  function updateCountdown() {
+    if (!timer) return;
+    const seconds = Math.max(0, Math.ceil((Date.parse(timer.dataset.deadline) - Date.now()) / 1000));
+    timer.textContent = Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
+  }
+  updateCountdown();
+  if (timer) setInterval(updateCountdown, 1000);
   async function refreshGame() {
     try {
       const response = await fetch('{% url "game-state" game.id %}', {cache: 'no-store'});
@@ -81,13 +122,25 @@
         window.location.reload(); return;
       }
       const chat = document.getElementById('game-chat');
-      if (chat) {
-        chat.replaceChildren(...data.messages.map(message => {
-          const row = document.createElement('p');
-          row.textContent = message.alias + ': ' + message.content;
-          return row;
-        }));
+      if (chat) chat.replaceChildren(...data.messages.map(message => {
+        const row = document.createElement('p');
+        row.textContent = message.alias + ': ' + message.content;
+        return row;
+      }));
+      const vote = document.getElementById('current-vote');
+      if (vote) vote.textContent = data.own_vote_alias || 'No vote yet';
+      const messageTargets = document.getElementById('message-targets');
+      if (messageTargets) {
+        for (const radio of messageTargets.querySelectorAll('input')) radio.required = !data.own_vote_alias;
+        document.getElementById('message-vote-help').textContent = data.own_vote_alias ? 'A saved vote exists. Select a player to change it or keep your current vote.' : 'Choose another player to send your first message.';
       }
+      if (data.own_agent) {
+        document.getElementById('agent-enabled').textContent = data.own_agent.enabled ? 'enabled' : 'stopped';
+        document.getElementById('agent-error').textContent = data.own_agent.error;
+        document.getElementById('agent-last-run').textContent = data.own_agent.last_run_at ? new Date(data.own_agent.last_run_at).toLocaleString() : 'No attempt yet';
+      }
+      const status = document.getElementById('chat-status');
+      if (status) status.textContent = '';
     } catch (error) {
       const status = document.getElementById('chat-status');
       if (status) status.textContent = error.message;

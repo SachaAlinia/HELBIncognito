@@ -34,6 +34,8 @@
             <!-- Navbar Right Side -->
             <div class="navbar-nav">
               {% if user.is_authenticated %}
+                {# Assisted by OpenAI Codex: private scripts and public statistics. #}
+                <a class="nav-item nav-link" href="{% url 'script-list' %}">Scripts</a>
                 <a class="nav-item nav-link" href="{% url 'game-create' %}">Start a Game !</a>
                 <a class="nav-item nav-link" href="{% url 'profile' %}">Profile</a>
                 <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn nav-link" type="submit">Logout</button></form>

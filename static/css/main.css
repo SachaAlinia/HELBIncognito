@@ -154,3 +154,15 @@ legend {
   letter-spacing: 0.5px;
   border-bottom: 1px solid #30363d !important;
 }
+
+/* Assisted by OpenAI Codex: accessible daily statistics and reusable scripts. */
+.script-content { white-space: pre-wrap; overflow-wrap: anywhere; }
+.script-card { border-top: 1px solid #ddd; padding: 1rem 0; }
+.daily-chart { display: flex; gap: .5rem; overflow-x: auto; padding: .75rem 0; }
+.chart-day { min-width: 3rem; text-align: center; }
+.chart-bars { height: 125px; display: flex; align-items: flex-end; justify-content: center; gap: 3px; border-bottom: 1px solid #888; }
+.chart-bars span { display: inline-block; width: 15px; }
+.chart-played { background: #28669f; }
+.chart-won { background: #25833e; }
+.chart-key { display: inline-block; width: 12px; height: 12px; margin-left: .4rem; }
+#game-chat { max-height: 24rem; overflow-y: auto; overflow-wrap: anywhere; }

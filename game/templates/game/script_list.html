@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+{# Assisted by OpenAI Codex. #}
+<section class="content-section">
+  <h2>Your scripts</h2>
+  <p>Save reusable instructions for your agents. Each agent stores a copy when you apply a script.</p>
+  <a class="btn btn-primary mb-3" href="{% url 'script-create' %}">New script</a>
+  {% for script in scripts %}
+  <article class="script-card">
+    <h3>{{ script.title }}</h3>
+    <p class="script-content">{{ script.content }}</p>
+    <a href="{% url 'script-edit' script.id %}">Edit</a>
+    <form method="post" action="{% url 'script-delete' script.id %}" class="d-inline">
+      {% csrf_token %}<button type="submit" class="btn btn-link text-danger">Delete</button>
+    </form>
+  </article>
+  {% empty %}<p>You have no scripts yet.</p>{% endfor %}
+</section>
+{% endblock content %}
